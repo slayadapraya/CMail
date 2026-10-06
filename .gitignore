@@ -1,0 +1,34 @@
+# Never commit account data, credentials, or generated runtime content.
+__pycache__/
+*.py[cod]
+*.sqlite*
+*.db
+*.db-*
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+credentials*.json
+client_secret*.json
+*oauth*.json
+*token*.json
+*secrets*.json
+accounts/
+cache/
+config/
+keyring/
+.local/
+work/
+screenshots/
+core
+core.[0-9]*
+*.log
+.venv/
+venv/
+build/
+dist/
+# Packages are produced from reviewed source; only packages/ is published.
+*.deb
+!packages/*.deb

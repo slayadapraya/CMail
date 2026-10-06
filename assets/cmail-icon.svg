@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">CMail</title>
+  <desc id="desc">A simple blue envelope drawn with one thick, softly curved continuous stroke on dark grey.</desc>
+  <rect x="6" y="6" width="116" height="116" rx="26" fill="#24272f"/>
+  <path d="M36 40C50 39 78 39 91 40C94 40 95 43 95 47L94 84C94 89 92 91 87 91L40 91C35 91 33 88 33 83L33 47C33 43 34 41 37 41L61 63C63 65 65 65 67 63L91 42" fill="none" stroke="#7db4e7" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
