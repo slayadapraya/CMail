@@ -109,12 +109,12 @@ def normalize_message(value):
 
 class Gmail:
     provider='google';name='Google';attachment_limit=20_000_000
-    def __init__(self,auth):self.auth=auth;self.backoff_until=0;self.rate_lock=threading.Lock();self.next_request=0;self.quota_failures=0;self.cancel_event=threading.Event()
+    def __init__(self,auth):self.auth=auth;self.backoff_until=0;self.service_backoffs={};self.rate_lock=threading.Lock();self.next_request=0;self.quota_failures=0;self.cancel_event=threading.Event()
     def api(self,method,path,data=None,service='gmail',send=False):
         if self.cancel_event.is_set():raise AppError('Mail loading stopped. Saved messages will resume next launch.')
         bases={'gmail':'https://gmail.googleapis.com/gmail/v1/users/me/','calendar':'https://www.googleapis.com/calendar/v3/','people':'https://people.googleapis.com/v1/'}
         if service not in bases or path.startswith(('http:','https:','//')):raise AppError('Refused an unexpected Google API URL.')
-        if time.time()<self.backoff_until:raise AppError('Google requested a pause. Synchronisation will retry later.')
+        if time.time()<(self.backoff_until if service=='gmail' else self.service_backoffs.get(service,0)):raise AppError('Google requested a pause for '+service+'. Synchronisation will retry later.')
         if service=='gmail':
             cost=100 if send else 40 if path.startswith('threads/') and method=='GET' else 20 if path.startswith('messages/') and method=='GET' else 5
             with self.rate_lock:
@@ -122,7 +122,7 @@ class Gmail:
                 if delay:time.sleep(delay)
                 self.next_request=time.monotonic()+cost/70.0
         if self.cancel_event.is_set():raise AppError('Mail loading stopped. Saved messages will resume next launch.')
-        if time.time()<self.backoff_until:raise AppError('Google requested a pause. Synchronisation will retry later.')
+        if time.time()<(self.backoff_until if service=='gmail' else self.service_backoffs.get(service,0)):raise AppError('Google requested a pause for '+service+'. Synchronisation will retry later.')
         try:response=requests.request(method,bases[service]+path,json=data,headers={'Authorization':'Bearer '+self.auth.access_token()},timeout=(10,45))
         except requests.RequestException as exc:
             if send:raise AmbiguousSend('Google’s send result is unknown. Check Gmail Sent before sending again.') from exc
@@ -135,7 +135,9 @@ class Gmail:
             if response.status_code==429 or any(r in ('rateLimitExceeded','userRateLimitExceeded','quotaExceeded') for r in reasons) or 'quota exceeded' in message.lower():
                 try:delay=max(30,min(3600,int(response.headers.get('Retry-After',str(min(900,60*2**self.quota_failures))))))
                 except ValueError:delay=60
-                self.quota_failures=min(self.quota_failures+1,4);self.backoff_until=time.time()+delay
+                self.quota_failures=min(self.quota_failures+1,4)
+                if service=='gmail':self.backoff_until=time.time()+delay
+                else:self.service_backoffs[service]=time.time()+delay
                 message=f'Google quota pause · retrying automatically in {delay} seconds. Cached mail is available.'
             if send and response.status_code>=500:raise AmbiguousSend('Google’s send result is unknown. Check Sent before sending again.')
             raise ApiError(message,response.status_code)

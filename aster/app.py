@@ -22,7 +22,7 @@ from .imap_google import AppPasswordAuth, GmailIMAP
 from .core import SecretVault
 from .richtext import RichEditor
 from .assistant import Assistant
-from .theme import FUTURE_CSS, PRESETS, scaled_css, select_theme, save_custom_theme, customize_color
+from .theme import FUTURE_CSS, CMAIL_CSS, PRESETS, scaled_css, select_theme, save_custom_theme, customize_color
 import webbrowser
 import re
 import base64
@@ -46,9 +46,9 @@ NAVY_PALETTE = """
 @define-color dialog_fg_color #e6edf8;
 @define-color popover_bg_color #17243b;
 @define-color popover_fg_color #e6edf8;
-@define-color accent_bg_color #c63d56;
+@define-color accent_bg_color #247bb5;
 @define-color accent_fg_color #ffffff;
-@define-color accent_color #ff7187;
+@define-color accent_color #69bafa;
 """
 CSS = """
 headerbar { background-image: linear-gradient(115deg, @headerbar_bg_color, alpha(@accent_bg_color,.18)); }
@@ -111,6 +111,15 @@ def label(text='', css=None, wrap=False):
 def button(text, callback, css=None):
     w = Gtk.Button(label=text); w.connect('clicked', callback)
     if css: w.add_css_class(css)
+    return w
+
+def command_button(text,icon,callback,primary=False,icon_only=False):
+    w=Gtk.Button();w.connect('clicked',callback);w.set_tooltip_text(text);w.update_property([Gtk.AccessibleProperty.LABEL],[text])
+    contents=Gtk.Box(spacing=7);contents.set_halign(Gtk.Align.CENTER);contents.append(Gtk.Image.new_from_icon_name(icon))
+    w.cmail_label=Gtk.Label(label=text)
+    if not icon_only:contents.append(w.cmail_label)
+    w.set_child(contents)
+    if primary:w.add_css_class('suggested-action')
     return w
 
 def clear(box):
@@ -206,10 +215,11 @@ class Aster(Adw.Application):
         nav = Gtk.Box(spacing=4); nav.add_css_class('topnav')
         for key, title in [('mail','Mail'), ('calendar','Calendar'), ('contacts','People'), ('drafts','Local drafts')]:
             item = button(title, lambda _, section=key: self.show_section(section)); self.nav_buttons[key] = item; nav.append(item)
-        spacer = Gtk.Box(); spacer.set_hexpand(True); nav.append(spacer); self.topnav_widget=nav;outer.append(nav)
+        spacer = Gtk.Box(); spacer.set_hexpand(True); nav.append(spacer); self.topnav_widget=nav;nav.remove(spacer);header.pack_start(nav)
         command = Gtk.Box(spacing=5); command.add_css_class('commandbar')
-        command.append(button('＋  New message', lambda *_: self.compose(), 'suggested-action'))
-        self.refresh_button=button('↻  Refresh', lambda *_: self.refresh());self.refresh_button.set_tooltip_text('Check for new mail now (F5)');command.append(self.refresh_button)
+        command.append(command_button('New message','list-add-symbolic',lambda *_:self.compose(),primary=True))
+        self.refresh_button=command_button('Refresh','view-refresh-symbolic',lambda *_:self.refresh());self.refresh_button.set_tooltip_text('Check for new mail now (F5)');command.append(self.refresh_button)
+        command.append(Gtk.Separator(orientation=Gtk.Orientation.VERTICAL))
         keys=Gtk.EventControllerKey()
         def refresh_key(_,keyval,*args):
             if keyval==Gdk.KEY_F5:self.refresh();return True
@@ -218,8 +228,10 @@ class Aster(Adw.Application):
         keys.connect('key-pressed',refresh_key);self.win.add_controller(keys)
         self.message_commands=[]
         for name,action in [('Reply',lambda m:self.compose(reply=m)),('Forward',lambda m:self.compose(forward=m)),('Archive',lambda m:self.move_message(m,'archive')),('Delete',lambda m:self.move_message(m,'deleteditems'))]:
-            item=button(name,lambda _,fn=action:self.selected_action(fn));item.set_sensitive(False);self.message_commands.append(item);command.append(item)
-        menu=Gtk.MenuButton(label='More');popover=Gtk.Popover();options=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=4);popover.set_child(options);menu.set_popover(popover)
+            icons={'Reply':'mail-reply-sender-symbolic','Forward':'mail-forward-symbolic','Archive':'mail-archive-symbolic','Delete':'user-trash-symbolic'}
+            if name=='Archive':command.append(Gtk.Separator(orientation=Gtk.Orientation.VERTICAL))
+            item=command_button(name,icons[name],lambda _,fn=action:self.selected_action(fn),icon_only=name in ('Archive','Delete'));item.set_sensitive(False);self.message_commands.append(item);command.append(item)
+        menu=Gtk.MenuButton(icon_name='view-more-symbolic');menu.set_tooltip_text('More mail actions');menu.set_always_show_arrow(False);popover=Gtk.Popover();options=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=4);popover.set_child(options);menu.set_popover(popover)
         for name,action in [('Reply all',lambda m:self.compose(reply=m,reply_all=True)),('Mark unread',self.mark_unread),('Star / unstar',self.flag_message)]:
             item=button(name,lambda _,fn=action:(popover.popdown(),self.selected_action(fn)));item.set_sensitive(False);self.message_commands.append(item);options.append(item)
         options.append(button('Reading pane ↔ / ↕',lambda *_:(popover.popdown(),self.toggle_pane())));command.append(menu)
@@ -241,7 +253,7 @@ class Aster(Adw.Application):
         self.folders = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3); folder_scroll=scroll(self.folders); folder_scroll.set_hexpand(False); side.append(folder_scroll)
         self.populate_folders()
         side.append(Gtk.Separator()); side.append(button('Local drafts', lambda *_: self.show_section('drafts')))
-        side.append(label('CMAIL  /  0.7.0', 'preview'))
+        side.append(label('CMAIL  /  0.8.1', 'preview'))
         self.content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL); self.content.set_hexpand(True); horizontal.append(self.content)
         self.status = label('Ready · Explore the demo or connect an account in Settings.', 'status'); outer.append(self.status)
         if self.mode=='live':
@@ -275,8 +287,8 @@ headerbar {background-image:linear-gradient(110deg,@headerbar_bg_color,alpha(@ac
 .topnav {background-image:linear-gradient(90deg,alpha(@accent_bg_color,.07),transparent);}
 textview, textview text {background:@card_bg_color;color:@window_fg_color;}
 .compose-body, .compose-body text {background:@view_bg_color;color:@window_fg_color;}
-.format-red {color:#ff7187;} .format-blue {color:#7ab8ff;} .format-green {color:#73d9bd;} .format-white {color:#ffffff;}
-'''+FUTURE_CSS+extra,scale)+'.workspace-subtitle {font-size:'+str(max(9,round(11*scale)))+'px;letter-spacing:.5px;padding-top:3px;padding-bottom:3px;min-height:14px;} .topnav button label {padding-top:2px;padding-bottom:2px;}')
+.format-red {color:#69bafa;} .format-blue {color:#7ab8ff;} .format-green {color:#73d9bd;} .format-white {color:#ffffff;}
+'''+FUTURE_CSS+extra+CMAIL_CSS,scale)+'.workspace-subtitle {font-size:'+str(max(9,round(11*scale)))+'px;letter-spacing:.5px;padding-top:3px;padding-bottom:3px;min-height:14px;} .topnav button label {padding-top:2px;padding-bottom:2px;}')
         Adw.StyleManager.get_default().set_color_scheme(Adw.ColorScheme.FORCE_DARK if dark else Adw.ColorScheme.DEFAULT)
     def ui_scale(self):return max(.65,min(1.2,float(self.config.get('ui_scale',.85))))
     def apply_layout(self):
@@ -512,7 +524,7 @@ textview, textview text {background:@card_bg_color;color:@window_fg_color;}
             if context!=self.mail_context():return
             if self.docks.dragging is not None:self.mail_render_pending=True;return
             rows,self.photo_index,self.contact_photo_index=result
-            shown=self.mail_list.set_rows(rows,self.selected,style_key=(self.config.get('display_timezone','Pacific/Auckland'),self.ui_scale()))
+            shown=self.mail_list.set_rows(rows,self.selected,style_key=(self.config.get('display_timezone','Pacific/Auckland'),self.ui_scale(),self.config.get('mail_density','cards')))
             self.mail_title.set_text(('Inbox' if self.folder == 'inbox' else 'Messages') + f' · {shown}');self.mail_empty.set_visible(not shown)
         if self.store.item_count('mail',self.folder)<=300:apply(self.prepare_mail(*context[:-1]));return
         self.mail_build_running=True
@@ -522,6 +534,7 @@ textview, textview text {background:@card_bg_color;color:@window_fg_color;}
         def failed(message):self.mail_build_running=False;self.mail_build_pending=False;self.error(message)
         self.job(lambda:self.prepare_mail(*context[:-1]),complete,failed)
     def mail_row(self,msg):
+        if self.config.get('mail_density','cards')=='compact':return self.compact_mail_row(msg)
         sender=msg.get('from',{}).get('emailAddress',{})
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5); box.add_css_class('mail-row')
         top = Gtk.Box(spacing=8);avatar=self.avatar(sender);top.append(avatar);who = label(sender.get('name') or sender.get('address') or '(No sender)', 'sender' if msg.get('isRead') else 'unread')
@@ -531,6 +544,17 @@ textview, textview text {background:@card_bg_color;color:@window_fg_color;}
         subject = label(('★ ' if msg.get('flag',{}).get('flagStatus')=='flagged' else '')+('⌁ ' if msg.get('hasAttachments') else '')+(msg.get('subject') or '(No subject)')+(f'  ·  {msg["count"]} messages' if msg['count']>1 else '')); subject.set_ellipsize(3);subject.add_css_class('mail-subject');box.append(subject)
         preview = label(msg.get('bodyPreview','').replace('\n',' '), 'preview'); preview.set_ellipsize(3); box.append(preview)
         return box
+    def compact_mail_row(self,msg):
+        sender=msg.get('from',{}).get('emailAddress',{})
+        row=Gtk.Box(spacing=10);row.add_css_class('mail-row');row.add_css_class('compact-row')
+        avatar=self.avatar(sender);avatar.set_size_request(-1,-1);avatar.set_size(round(24*self.ui_scale()));row.append(avatar)
+        who=label(sender.get('name') or sender.get('address') or '(No sender)','sender' if msg.get('isRead') else 'unread');who.set_ellipsize(3);who.set_width_chars(14);who.set_max_width_chars(14);row.append(who)
+        subject=label((msg.get('subject') or '(No subject)')+(f' · {msg["count"]}' if msg['count']>1 else ''),'mail-subject');subject.set_ellipsize(3);subject.set_hexpand(True);row.append(subject)
+        preview=label(msg.get('bodyPreview','').replace('\n',' '),'preview');preview.set_ellipsize(3);preview.set_hexpand(True);preview.set_max_width_chars(65);row.append(preview)
+        if msg.get('hasAttachments'):image=Gtk.Image.new_from_icon_name('mail-attachment-symbolic');image.set_tooltip_text('Has attachments');row.append(image)
+        if msg.get('flag',{}).get('flagStatus')=='flagged':image=Gtk.Image.new_from_icon_name('starred-symbolic');image.set_tooltip_text('Starred');row.append(image)
+        row.append(label(self.display_date(msg),'preview'));row.set_tooltip_text(msg.get('bodyPreview',''))
+        return row
     def avatar(self,sender,large=False):
         size=round((54 if large else 34)*self.ui_scale());box=Adw.Avatar.new(size,sender.get('name') or sender.get('address') or '?',True);box.set_halign(Gtk.Align.CENTER);box.set_valign(Gtk.Align.CENTER);box.set_hexpand(False);box.set_vexpand(False);box.add_css_class('sender-avatar')
         address=sender.get('address','').casefold();store=self.store
@@ -713,25 +737,27 @@ textview, textview text {background:@card_bg_color;color:@window_fg_color;}
         if not self.graph:
             if not automatic:self.status.set_text('Reconnect your account to refresh live mail.')
             return
-        retry_at=getattr(self.graph,'backoff_until',0)
+        retry_at=getattr(self.graph,'backoff_until',0) if automatic or section=='mail' else getattr(self.graph,'service_backoffs',{}).get('calendar' if section=='calendar' else 'people',0)
         if retry_at>time.time():
-            remaining=max(1,int(retry_at-time.time()));self.refresh_button.set_label('↻  Refresh (paused)')
+            remaining=max(1,int(retry_at-time.time()));self.refresh_button.cmail_label.set_text('Refresh (paused)')
             self.status.set_text(f'Google quota pause · Retry in {remaining // 60}m {remaining % 60:02d}s · Cached mail is available')
             return
         self.syncing=True; graph,store,section,folder,generation=self.graph,self.store,section,self.folder,self.generation
-        month=self.current_month; self.refresh_button.set_label('↻  Refreshing…');self.status.set_text('Checking for new mail…')
+        month=self.current_month; self.refresh_button.cmail_label.set_text('Refreshing…');self.status.set_text('Loading calendar…' if section=='calendar' and not automatic else 'Loading contacts…' if section=='contacts' and not automatic else 'Checking for new mail…')
         def sync():
-            had_cursor=bool(store.get('delta:inbox'));old_ids={x['id'] for x in store.items('mail','inbox')}
-            def progress(loaded,total):
-                def update():
-                    if generation==self.generation:
-                        self.status.set_text(f'Loading Gmail · {loaded} of {total} messages · You can read loaded mail')
-                        if 'mail' in self.panel_built and self.folder=='inbox':self.render_mail()
-                    return False
-                GLib.idle_add(update)
-            if isinstance(graph,Gmail):graph.sync_mail(store,'inbox',progress=progress,batch_limit=1)
-            else:graph.sync_mail(store,'inbox')
-            new_mail=[x for x in store.items('mail','inbox') if had_cursor and x['id'] not in old_ids and not x.get('isRead')]
+            new_mail=[]
+            if automatic or section not in ('calendar','contacts'):
+                had_cursor=bool(store.get('delta:inbox'));old_ids={x['id'] for x in store.items('mail','inbox')}
+                def progress(loaded,total):
+                    def update():
+                        if generation==self.generation:
+                            self.status.set_text(f'Loading Gmail · {loaded} of {total} messages · You can read loaded mail')
+                            if 'mail' in self.panel_built and self.folder=='inbox':self.render_mail()
+                        return False
+                    GLib.idle_add(update)
+                if isinstance(graph,Gmail):graph.sync_mail(store,'inbox',progress=progress,batch_limit=1)
+                else:graph.sync_mail(store,'inbox')
+                new_mail=[x for x in store.items('mail','inbox') if had_cursor and x['id'] not in old_ids and not x.get('isRead')]
             if section=='mail' and folder!='inbox' and not automatic:
                 if isinstance(graph,Gmail):graph.sync_mail(store,folder,batch_limit=1)
                 else:graph.sync_mail(store,folder)
@@ -743,14 +769,17 @@ textview, textview text {background:@card_bg_color;color:@window_fg_color;}
             return datetime.now().strftime('%H:%M:%S'),new_mail
         def success(result):
             stamp,new_mail=result
-            self.syncing=False;self.refresh_button.set_label('↻  Refresh')
+            self.syncing=False;self.refresh_button.cmail_label.set_text('Refresh')
             if generation != self.generation: return
             if new_mail and self.config.get('notifications',True):
                 notification=Gio.Notification.new('New mail' if len(new_mail)==1 else str(len(new_mail))+' new messages')
                 notification.set_body(new_mail[0].get('subject') or '(No subject)');self.send_notification('new-mail',notification)
-            store.set('last_sync',stamp)
+            store.set('last_sync:'+section,stamp)
+            if section=='mail' or automatic:store.set('last_sync',stamp)
             importing=store.get('import:inbox')
             self.status.set_text(('New mail checked · '+stamp+' · Importing older mail: '+str(importing['offset'])+' / '+str(len(importing['refs']))) if importing else 'Up to date · '+stamp+' · Checks every 10 seconds while open')
+            if section=='calendar' and not automatic:self.status.set_text('Calendar updated · '+stamp)
+            elif section=='contacts' and not automatic:self.status.set_text('Contacts updated · '+stamp)
             if folder==self.folder:self.render_mail()
             if section=='contacts':self.render_contacts()
             elif section=='calendar' and month==self.current_month:self.render_calendar()
@@ -760,8 +789,12 @@ textview, textview text {background:@card_bg_color;color:@window_fg_color;}
                 self.refresh_pending=bool(self.pending_sections)
                 GLib.idle_add(lambda:(self.refresh(section=target) or False))
         def failure(message):
-            self.syncing=False;self.refresh_pending=False;self.pending_sections.clear();self.refresh_button.set_label('↻  Refresh')
-            if generation==self.generation: self.error('Sync paused · '+message)
+            self.syncing=False;self.refresh_pending=False;self.refresh_button.cmail_label.set_text('Refresh')
+            if generation==self.generation:
+                self.error(('Calendar sync failed · ' if section=='calendar' else 'Sync paused · ')+message)
+                if self.pending_sections:
+                    target=self.pending_sections.pop(0);self.refresh_pending=bool(self.pending_sections)
+                    GLib.idle_add(lambda:(self.refresh(section=target) or False))
         self.job(sync,success,failure)
     def build_contacts(self):
         content=self.panel_content('contacts');clear(content); box=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=16)
@@ -801,6 +834,7 @@ textview, textview text {background:@card_bg_color;color:@window_fg_color;}
         content.append(scroll(box));top=Gtk.Box(spacing=12);box.append(top)
         self.month_label=label('','section-title');self.month_label.set_hexpand(True);top.append(self.month_label)
         top.append(button('‹',lambda *_:self.change_month(-1)));top.append(button('Today',lambda *_:self.calendar_today()));top.append(button('›',lambda *_:self.change_month(1)))
+        top.append(command_button('Refresh calendar','view-refresh-symbolic',lambda *_:self.refresh(section='calendar')))
         top.append(button('＋ Appointment',lambda *_:self.new_event(),'suggested-action'))
         self.calendar_grid=Gtk.Grid(column_homogeneous=True,row_spacing=6,column_spacing=6);box.append(self.calendar_grid)
         agenda_header=Gtk.Box(spacing=8);self.agenda_title=label('','title-2');self.agenda_title.set_hexpand(True);agenda_header.append(self.agenda_title);agenda_header.append(button('Whole month',lambda *_:self.select_calendar_day(None)));box.append(agenda_header);self.agenda=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=8);box.append(self.agenda)
@@ -1157,6 +1191,14 @@ textview, textview text {background:@card_bg_color;color:@window_fg_color;}
             self.config.set('low_power',w.get_active());self.apply_layout()
             if 'mail' in self.panel_built:self.reader_key=None;self.render_mail()
         performance.connect('toggled',performance_changed)
+        box.append(label('Inbox row style','title-2'))
+        row_styles=Gtk.DropDown.new_from_strings(['Current size · message cards','Compact · single-line messages'])
+        row_styles.set_selected(1 if self.config.get('mail_density','cards')=='compact' else 0);box.append(row_styles)
+        box.append(label('Keep the current larger email rows, or use the compact list from concept C. This is independent of interface scale.','dim-label',True))
+        def rows_changed(widget,_):
+            self.config.set('mail_density','compact' if widget.get_selected() else 'cards');self.apply_theme()
+            if 'mail' in self.panel_built:self.render_mail()
+        row_styles.connect('notify::selected',rows_changed)
         box.append(label('Interface scale','title-2'))
         scale_label=label(f'{round(self.ui_scale()*100)}% · Smaller controls, text and email content','dim-label');box.append(scale_label)
         scale_control=Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL,65,120,5);scale_control.set_value(self.ui_scale()*100);scale_control.set_draw_value(False);box.append(scale_control)

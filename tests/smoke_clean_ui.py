@@ -35,7 +35,7 @@ def step(index=0):
  try:
   if index==0:
    app.config.set('ui_scale',.65);app.apply_layout();app.build_mail();app.settings()
-   dialog=app.settings_window;app.test_presets=next(w for w in descendants(dialog) if isinstance(w,Gtk.DropDown));pickers=[w for w in descendants(dialog) if isinstance(w,Gtk.ColorButton)];app.test_picker=pickers[0];color=Gdk.RGBA();color.parse('#123456');app.test_picker.set_rgba(color);app.test_picker.emit('color-set');app.test_presets.set_selected(2)
+   dialog=app.settings_window;app.test_presets=next(w for w in descendants(dialog) if isinstance(w,Gtk.DropDown) and w.get_model().get_string(0)=='Custom');pickers=[w for w in descendants(dialog) if isinstance(w,Gtk.ColorButton)];app.test_picker=pickers[0];color=Gdk.RGBA();color.parse('#123456');app.test_picker.set_rgba(color);app.test_picker.emit('color-set');app.test_presets.set_selected(2)
    assert app.config.get('color_background')!='#123456';app.test_presets.set_selected(0);assert app.config.get('color_background')=='#123456';app.settings_window.close();app.settings()
    assert app.config.get('color_background')=='#123456';app.settings_window.close();app.new_mail_folder()
   elif index==1:
@@ -44,7 +44,7 @@ def step(index=0):
    assert sum(isinstance(w,Gtk.Image) and w.has_css_class('cmail-logo') for w in descendants(app.win))==2
    assert not any(isinstance(w,Gtk.Label) and w.get_text()=='⠿' for w in descendants(app.folders))
    assert not any(isinstance(w,Gtk.MenuButton) and w.get_icon_name()=='view-more-symbolic' for w in descendants(app.folders))
-   assert any(isinstance(w,Gtk.MenuButton) and w.get_label()=='More' for w in descendants(app.command_widget))
+   assert any(isinstance(w,Gtk.MenuButton) and w.get_tooltip_text()=='More mail actions' for w in descendants(app.command_widget))
    group=next(w for w in descendants(app.folders) if isinstance(w,Gtk.Label) and w.has_css_class('folder-group-title'));folder=app.folder_buttons['inbox'].get_child();assert group.get_layout().get_pixel_size()[1]>folder.get_layout().get_pixel_size()[1]
    subtitle=next(w for w in descendants(app.win) if isinstance(w,Gtk.Label) and w.has_css_class('workspace-subtitle'));assert subtitle.get_height()>=subtitle.get_layout().get_pixel_size()[1],(subtitle.get_height(),subtitle.get_layout().get_pixel_size())
    capture(out/'cmail-clean-65.png');app.config.set('ui_scale',1.0);app.apply_layout();app.build_mail()

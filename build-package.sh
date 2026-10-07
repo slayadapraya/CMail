@@ -31,7 +31,7 @@ cat > "$aster_build/DEBIAN/control" <<'CONTROL'
 Package: cmail
 Replaces: aster-mail
 Conflicts: aster-mail
-Version: 0.7.0
+Version: 0.8.1
 Architecture: all
 Maintainer: CMail contributors <aster-maintainers@example.invalid>
 Depends: python3 (>= 3.10), python3-gi, python3-gi-cairo, python3-requests, gir1.2-gtk-4.0 (>= 4.12), gir1.2-adw-1, gir1.2-gdkpixbuf-2.0, gir1.2-secret-1, gir1.2-webkit-6.0
@@ -43,4 +43,4 @@ Description: Native Linux client for Microsoft and Gmail mail and calendar
  and Gmail integration, rich drafts, theme/layout controls and optional AI help.
 CONTROL
 chmod -R go-w "$aster_build"
-dpkg-deb --root-owner-group --build "$aster_build" "${1:-$aster_source/../cmail_0.7.0_all.deb}"
+dpkg-deb --root-owner-group --build "$aster_build" "${1:-$aster_source/../cmail_0.8.1_all.deb}"

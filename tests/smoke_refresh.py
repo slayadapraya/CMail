@@ -18,7 +18,7 @@ def step(index=0):
             release.set()
         elif index==1:
             assert calls==[('inbox',1),('inbox',1)];assert not app.syncing
-            assert 'every 10 seconds' in app.status.get_text();assert app.refresh_button.get_label()=='↻  Refresh'
+            assert 'every 10 seconds' in app.status.get_text();assert app.refresh_button.cmail_label.get_text()=='Refresh'
             app.graph.backoff_until=time.time()+65
             app.refresh_button.emit('clicked');assert not app.syncing and len(calls)==2
             assert 'Google quota pause' in app.status.get_text()

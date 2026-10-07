@@ -1,3 +1,16 @@
+# 0.8.1 — Calendar sync bugfix + Concept C layout
+
+Calendar and Contacts refresh no longer depend on inbox loading. Google API quota pauses are separated by service. Queued Calendar refreshes survive an inbox sync error, and Calendar has an explicit refresh button.
+
+# 0.8.0 — Concept C interface
+
+- Integrated Mail / Calendar / People / Local drafts into the header, retaining the draggable workspace tabs and standalone windows.
+- Flat icon command bar with tooltips, accessible labels, inexpensive hover fades and grouped actions.
+- Cleaner sidebar, inbox, reader, calendar and shared surfaces, with a CMail Blue colour preset. Existing custom colours remain available.
+- Settings → Inbox row style selects current-size cards (default) or compact single-line messages, independently of interface scale.
+- Density selection is saved and updates recycled rows without rebuilding the docking workspace.
+- Low-power rendering and all existing account, mail, calendar, folder, composer and AI controls retained.
+
 # CMail 0.7.0
 
 - Replaces the inbox ListBox with Gtk.ListView and a recycled-row factory. All cached conversations remain in the model, while GTK creates only a bounded set of row widgets around the viewport. Unchanged messages reuse model objects; refresh replaces only the changed range.

@@ -47,6 +47,7 @@ row:hover .mail-row {border-color:alpha(@accent_color,.35);}
 '''
 
 PRESETS={
+    'CMail Blue':dict(background='#0b1726',surface='#0e1c2e',cards='#15273b',mail='#242831',text='#e6edf8',accent='#69bafa',buttons='#247bb5'),
     'Crimson Orbit':dict(background='#0b1222',surface='#101a2e',cards='#152139',mail='#242831',text='#e6edf8',accent='#ff7187',buttons='#c63d56'),
     'Cyber Mint':dict(background='#071b1c',surface='#10292b',cards='#183639',mail='#223234',text='#e1fff8',accent='#62efc8',buttons='#166b5d'),
     'Violet Circuit':dict(background='#130e24',surface='#211735',cards='#2d2145',mail='#2a2534',text='#f0eaff',accent='#c193ff',buttons='#7351ad'),
@@ -80,3 +81,53 @@ def select_theme(config,name):
 def customize_color(config,key,value):
     if key not in COLOR_KEYS:raise ValueError('Unknown theme colour')
     config.set('color_'+key,value);config.set('theme_preset','Custom');save_custom_theme(config)
+
+# Flat surfaces and inexpensive colour-only hover feedback, shared by all panes.
+CMAIL_CSS = """
+window, headerbar, .topnav, .commandbar, .rail, .sidebar, .reader, .message-column {background-image:none;}
+headerbar {min-height:40px;background:@headerbar_bg_color;border-bottom:1px solid alpha(@accent_color,.18);}
+.brand {font-size:19px;letter-spacing:1px;text-shadow:none;}
+.topnav {padding:0px 6px;border:0;background:transparent;}
+.topnav button {padding:7px 12px;letter-spacing:0px;border-radius:0px;}
+.topnav button.active {background-image:none;background:transparent;border-bottom:2px solid @accent_color;}
+.commandbar {padding:5px 12px;background:@headerbar_bg_color;}
+.commandbar button {background:transparent;background-image:none;border:1px solid transparent;border-radius:6px;box-shadow:none;min-height:24px;padding:4px 8px;transition:background-color 120ms ease,color 120ms ease;}
+.commandbar button:hover {background:alpha(@accent_color,.16);color:@accent_color;border-color:transparent;box-shadow:none;}
+.commandbar button:disabled {opacity:.4;}
+.commandbar .suggested-action {background:@accent_bg_color;color:@accent_fg_color;border:1px solid alpha(@accent_color,.5);background-image:none;box-shadow:none;}
+.commandbar .suggested-action:hover {background:shade(@accent_bg_color,1.12);color:@accent_fg_color;box-shadow:none;}
+.commandbar separator {margin:5px 6px;background:alpha(@accent_color,.20);}
+.commandbar searchentry {background:alpha(@window_fg_color,.035);border:1px solid alpha(@accent_color,.18);border-radius:6px;}
+.rail {padding:10px 5px;background:@headerbar_bg_color;}
+.rail button {border-radius:6px;background-image:none;box-shadow:none;}
+.rail button.active {background:alpha(@accent_color,.12);border-color:transparent;box-shadow:none;}
+.sidebar {padding:12px 9px;background:@headerbar_bg_color;}
+.workspace-title {font-size:21px;letter-spacing:0px;}
+.account-card {padding:7px;border-radius:5px;background:alpha(@window_fg_color,.035);border-color:alpha(@window_fg_color,.08);}
+.sidebar button {border-radius:4px;box-shadow:none;transition:background-color 120ms ease;}
+.sidebar button.active {background-image:none;background:alpha(@accent_color,.16);border:1px solid transparent;border-left:3px solid @accent_color;box-shadow:none;}
+.sidebar button:hover {background:alpha(@accent_color,.10);}
+.folder-group-title {font-size:16px;font-weight:700;}
+.folder-row label {font-size:14px;}
+.message-column {background:@window_bg_color;}
+.list-heading {padding:12px 16px;}
+.section-title {font-size:24px;}
+.mail-row {border-radius:5px;background-image:none;box-shadow:none;}
+row:selected .mail-row {background-image:none;background:alpha(@accent_color,.14);box-shadow:none;}
+row:hover .mail-row {background:alpha(@accent_color,.08);}
+.mail-row.compact-row {margin:0px;padding:9px 14px;border:0;border-bottom:1px solid alpha(@window_fg_color,.07);border-radius:0px;background:transparent;}
+row:selected .compact-row {padding-left:11px;border:0;border-left:3px solid @accent_color;border-bottom:1px solid alpha(@window_fg_color,.07);background:alpha(@accent_color,.14);}
+.compact-row .sender-avatar {min-width:22px;min-height:22px;font-size:10px;}
+.reader {padding:18px;}
+.message-heading {padding:16px;border-radius:6px;box-shadow:none;}
+.reader-title {font-size:24px;}
+.message-paper, .card, .calendar-day, .attachment-chip {border-radius:6px;box-shadow:none;}
+.reader-actions button {background-image:none;box-shadow:none;border-radius:5px;}
+.calendar-day.today {box-shadow:none;border:1px solid @accent_color;}
+.calendar-day:hover, .reader-actions button:hover {background:alpha(@accent_color,.12);}
+.dock-tabs {padding:4px 8px;}
+.dock-tabs button {background-image:none;border-radius:4px;box-shadow:none;}
+.dock-tabs button.active {background:alpha(@accent_color,.12);color:@accent_color;}
+.status {padding:4px 12px;}
+.demo-banner {padding:4px 12px;font-size:11px;background:@view_bg_color;color:alpha(@window_fg_color,.65);}
+"""
