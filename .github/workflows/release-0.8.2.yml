@@ -2,7 +2,7 @@ name: Publish CMail 0.8.2 header update
 on:
   push:
     branches: [main]
-    paths: [packages/cmail_0.8.2_all.deb]
+    paths: [packages/cmail_0.8.2_all.deb, releases/v0.8.1.md, releases/v0.8.2.md]
   workflow_dispatch:
 permissions:
   contents: write
@@ -30,9 +30,9 @@ jobs:
         run: |
           test "$(dpkg-deb -f packages/cmail_0.8.2_all.deb Version)" = "0.8.2"
           (cd packages && sha256sum -c ../releases/SHA256SUMS-0.8.2.txt)
-          gh release edit v0.8.1 --notes-file releases/v0.8.1.md
+          gh release edit v0.8.1 --title "CMail 0.8.1 — Sync fixes + compact layout" --notes-file releases/v0.8.1.md
           if gh release view v0.8.2 >/dev/null 2>&1; then
-            echo 'Release v0.8.2 already exists; leaving the published release untouched.'
+            gh release edit v0.8.2 --notes-file releases/v0.8.2.md
             exit 0
           fi
           gh release create v0.8.2 packages/cmail_0.8.2_all.deb releases/SHA256SUMS-0.8.2.txt --target "$RELEASE_COMMIT" --title "CMail 0.8.2 — Inline email-header icons" --notes-file releases/v0.8.2.md --latest

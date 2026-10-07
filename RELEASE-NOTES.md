@@ -2,11 +2,11 @@
 
 Per-message Reply, Reply all, Forward, Archive, Trash, Mark unread and Star controls are now compact icons integrated beside the sender details. Tooltips, accessible names, keyboard focus and subtle hover fades match the top toolbar. The action group wraps beneath the sender in narrow panels. Conversation folding, message bodies, attachments and standalone windows remain available.
 
-# 0.8.1 — Calendar sync bugfix + Concept C layout
+# 0.8.1 — Calendar sync bugfix + compact layout
 
 Calendar and Contacts refresh no longer depend on inbox loading. Google API quota pauses are separated by service. Queued Calendar refreshes survive an inbox sync error, and Calendar has an explicit refresh button.
 
-# 0.8.0 — Concept C interface
+# 0.8.0 — Compact interface
 
 - Integrated Mail / Calendar / People / Local drafts into the header, retaining the draggable workspace tabs and standalone windows.
 - Flat icon command bar with tooltips, accessible labels, inexpensive hover fades and grouped actions.
