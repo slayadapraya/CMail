@@ -33,12 +33,27 @@ One connected account at a time. Mail refresh uses polling; Google quotas may pa
 
 Tokens use the system keyring. Mail and event caches are stored locally under `~/.local/share/aster-mail` and are not encrypted. Remote email images can be disabled in Settings.
 
-## Run from source
+## Build from source
 
-Install the dependencies listed in `build-package.sh`, then:
+On Ubuntu, install the dependencies and clone the repository:
 
 ```bash
+sudo apt update
+sudo apt install git python3 python3-gi python3-gi-cairo python3-requests \
+  gir1.2-gtk-4.0 gir1.2-adw-1 gir1.2-gdkpixbuf-2.0 \
+  gir1.2-secret-1 gir1.2-webkit-6.0 gnome-keyring
+
+git clone https://github.com/slayadapraya/CMail.git
+cd CMail
 bash run.sh
+```
+
+To build and install a `.deb` instead:
+
+```bash
+bash build-package.sh ./cmail_0.8.2_all.deb
+sudo apt install ./cmail_0.8.2_all.deb
+cmail
 ```
 
 Run unit tests with `python3 -m unittest discover -s tests`.
