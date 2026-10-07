@@ -4,7 +4,7 @@
 
 CMail is actively being developed. Performance, rendering, provider compatibility, and account setup still need work. Bugs and freezes may occur. Keep access to your provider's official mail app while trying it. CMail is independent software and is not affiliated with Microsoft, Google, or OpenAI.
 
-Current experimental version: **0.8.1**.
+Current experimental version: **0.8.2**.
 
 ## Features
 
@@ -38,11 +38,11 @@ Account setup guides: [Google / Gmail](GOOGLE-SETUP.md), [Microsoft](SETUP.md), 
 
 Ubuntu 24.04 and newer are the intended target, including Ubuntu 26 desktop. GTK **4.12+**, libadwaita, WebKitGTK **6.0**, Python **3.10+**, and a working desktop Secret Service/keyring are required. The package uses system libraries; package availability on other distributions has not been verified. No cross-distribution compatibility guarantee is made.
 
-Download the [experimental CMail 0.8.1 Debian package](https://github.com/slayadapraya/CMail/releases/download/v0.8.1/cmail_0.8.1_all.deb). In the directory containing the download:
+Download the [experimental CMail 0.8.2 Debian package](https://github.com/slayadapraya/CMail/releases/download/v0.8.2/cmail_0.8.2_all.deb). In the directory containing the download:
 
 ```bash
 sudo apt update
-sudo apt install ./cmail_0.8.1_all.deb
+sudo apt install ./cmail_0.8.2_all.deb
 cmail
 ```
 
@@ -64,7 +64,7 @@ bash run.sh
 The source runner uses `/usr/bin/python3`, so Ubuntu's GTK bindings are available. To build the package locally:
 
 ```bash
-bash build-package.sh ./cmail_0.8.1_all.deb
+bash build-package.sh ./cmail_0.8.2_all.deb
 ```
 
 ### Performance options
@@ -122,6 +122,6 @@ A synthetic 10,000-conversation run used 211 recycled row shells and measured a 
 
 See [release notes](RELEASE-NOTES.md). Contributions and reproducible, redacted bug reports are welcome.
 
-### Interface update (0.8.1)
+### Interface update (0.8.2)
 
 Concept C introduces a flat icon toolbar, integrated header navigation, calmer surfaces and a CMail Blue preset. Settings → Inbox row style lets you retain current-sized message cards or switch to compact single-line rows. Interface scaling is independent; draggable dock tabs, panel splits and standalone windows remain supported.

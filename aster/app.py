@@ -253,7 +253,7 @@ class Aster(Adw.Application):
         self.folders = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3); folder_scroll=scroll(self.folders); folder_scroll.set_hexpand(False); side.append(folder_scroll)
         self.populate_folders()
         side.append(Gtk.Separator()); side.append(button('Local drafts', lambda *_: self.show_section('drafts')))
-        side.append(label('CMAIL  /  0.8.1', 'preview'))
+        side.append(label('CMAIL  /  0.8.2', 'preview'))
         self.content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL); self.content.set_hexpand(True); horizontal.append(self.content)
         self.status = label('Ready · Explore the demo or connect an account in Settings.', 'status'); outer.append(self.status)
         if self.mode=='live':
@@ -637,12 +637,31 @@ textview, textview text {background:@card_bg_color;color:@window_fg_color;}
             self.job(fetch,show)
     def thread_message(self,parent,msg,expanded=False):
         sender=msg.get('from',{}).get('emailAddress',{});expander=Gtk.Expander();expander.set_expanded(expanded);expander.add_css_class('message-heading');parent.append(expander)
-        header=Gtk.Box(spacing=12);header.append(self.avatar(sender));identity=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=4);identity.set_hexpand(True);identity.append(label(sender.get('name') or sender.get('address',''),'sender',True));preview=label(msg.get('bodyPreview',''),'preview');preview.set_ellipsize(3);identity.append(preview);header.append(identity);header.append(label(self.display_date(msg),'preview'));header.set_hexpand(True);expander.set_label_widget(header)
-        content=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=10);expander.set_child(content);content.append(label(sender.get('address','')+' · '+self.display_date(msg,True),'preview',True))
-        recipients=[r.get('emailAddress',{}).get('address','') for r in msg.get('toRecipients',[])];content.append(label('To: '+', '.join(recipients),'preview',True))
-        actions=Gtk.FlowBox(selection_mode=Gtk.SelectionMode.NONE,column_spacing=6,row_spacing=6,max_children_per_line=6)
-        for name,fn in [('Reply',lambda:self.compose(reply=msg)),('Reply all',lambda:self.compose(reply=msg,reply_all=True)),('Forward',lambda:self.compose(forward=msg)),('Archive',lambda:self.move_message(msg,'archive')),('Move to trash',lambda:self.move_message(msg,'deleteditems')),('Mark unread',lambda:self.mark_unread(msg)),('★',lambda:self.flag_message(msg))]:actions.insert(button(name,lambda _,f=fn:f()),-1)
-        content.append(actions);bodybox=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=8);content.append(bodybox)
+        # FlowBox wraps the complete action group below the sender on narrow panes.
+        # The same persistent Expander still owns folding and body cleanup.
+        header=Gtk.FlowBox(selection_mode=Gtk.SelectionMode.NONE,homogeneous=False,min_children_per_line=1,max_children_per_line=2,column_spacing=16,row_spacing=6);header.set_hexpand(True);header.add_css_class('message-header');header.set_activate_on_single_click(False);header.set_focusable(False)
+        sender_box=Gtk.Box(spacing=10);sender_box.set_hexpand(True);sender_box.append(self.avatar(sender))
+        identity=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=3);identity.set_hexpand(True)
+        who=label(sender.get('name') or sender.get('address',''),'sender');who.set_ellipsize(3);who.set_max_width_chars(38);identity.append(who)
+        address=label(sender.get('address',''),'preview');address.set_ellipsize(3);address.set_max_width_chars(38);address.set_tooltip_text(sender.get('address',''));identity.append(address)
+        preview=label(msg.get('bodyPreview','').replace('\n',' '),'preview');preview.set_ellipsize(3);preview.set_single_line_mode(True);preview.set_max_width_chars(38);preview.set_visible(not expanded);identity.append(preview);sender_box.append(identity);header.insert(sender_box,-1)
+        expander.connect('notify::expanded',lambda widget,_:preview.set_visible(not widget.get_expanded()))
+        tools=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=4);tools.set_halign(Gtk.Align.END)
+        stamp=label(self.display_date(msg),'preview');stamp.set_halign(Gtk.Align.END);stamp.set_tooltip_text(self.display_date(msg,True));tools.append(stamp)
+        actions=Gtk.Box(spacing=3);actions.add_css_class('message-actions');actions.set_halign(Gtk.Align.END)
+        flagged=msg.get('flag',{}).get('flagStatus')=='flagged'
+        definitions=[('Reply','mail-reply-sender-symbolic',lambda:self.compose(reply=msg)),('Reply all','mail-reply-all-symbolic',lambda:self.compose(reply=msg,reply_all=True)),('Forward','mail-forward-symbolic',lambda:self.compose(forward=msg)),('Archive','mail-archive-symbolic',lambda:self.move_message(msg,'archive')),('Move to trash','user-trash-symbolic',lambda:self.move_message(msg,'deleteditems')),('Mark unread','mail-unread-symbolic',lambda:self.mark_unread(msg)),('Unstar message' if flagged else 'Star message','starred-symbolic' if flagged else 'non-starred-symbolic',lambda:self.flag_message(msg))]
+        for index,(name,icon,fn) in enumerate(definitions):
+            if index in (3,6):actions.append(Gtk.Separator(orientation=Gtk.Orientation.VERTICAL))
+            item=command_button(name,icon,lambda _,f=fn:f(),icon_only=True)
+            if index==6 and flagged:item.add_css_class('starred')
+            actions.append(item)
+        tools.append(actions);header.insert(tools,-1)
+        for child in (header.get_child_at_index(0),header.get_child_at_index(1)):child.set_focusable(False)
+        expander.set_label_widget(header)
+        content=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=10);expander.set_child(content)
+        recipients=[r.get('emailAddress',{}).get('address','') for r in msg.get('toRecipients',[])];content.append(label('To: '+', '.join(recipients),'preview',True));content.append(Gtk.Separator())
+        bodybox=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=8);content.append(bodybox)
         state={'loaded':False};graph,store=self.graph,self.store
         def render(assets,remote=None):
             if remote is None:remote=self.config.get('load_remote_images',True)

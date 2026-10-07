@@ -131,3 +131,12 @@ row:selected .compact-row {padding-left:11px;border:0;border-left:3px solid @acc
 .status {padding:4px 12px;}
 .demo-banner {padding:4px 12px;font-size:11px;background:@view_bg_color;color:alpha(@window_fg_color,.65);}
 """
+
+CMAIL_CSS += """
+.message-header > flowboxchild {padding:0px;background:transparent;border:0px;outline:none;}
+.message-actions button {min-width:22px;min-height:22px;padding:5px;border:1px solid transparent;border-radius:5px;background:transparent;background-image:none;box-shadow:none;transition:background-color 120ms ease,color 120ms ease;}
+.message-actions button:hover {background:alpha(@accent_color,.16);color:@accent_color;}
+.message-actions button:focus-visible {outline:2px solid @accent_color;outline-offset:1px;}
+.message-actions button.starred {color:@accent_color;}
+.message-actions separator {margin:5px 4px;background:alpha(@accent_color,.18);}
+"""

@@ -1,0 +1,38 @@
+name: Publish CMail 0.8.2 header update
+on:
+  push:
+    branches: [main]
+    paths: [packages/cmail_0.8.2_all.deb]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: cmail-release-0.8.2
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Fetch the exact public source commit
+        env:
+          RELEASE_COMMIT: ${{ github.sha }}
+        run: |
+          git init .
+          git remote add origin https://github.com/slayadapraya/CMail.git
+          git fetch --depth=1 origin "$RELEASE_COMMIT"
+          git checkout --detach FETCH_HEAD
+      - name: Verify installer and publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: slayadapraya/CMail
+          RELEASE_COMMIT: ${{ github.sha }}
+        run: |
+          test "$(dpkg-deb -f packages/cmail_0.8.2_all.deb Version)" = "0.8.2"
+          (cd packages && sha256sum -c ../releases/SHA256SUMS-0.8.2.txt)
+          gh release edit v0.8.1 --notes-file releases/v0.8.1.md
+          if gh release view v0.8.2 >/dev/null 2>&1; then
+            echo 'Release v0.8.2 already exists; leaving the published release untouched.'
+            exit 0
+          fi
+          gh release create v0.8.2 packages/cmail_0.8.2_all.deb releases/SHA256SUMS-0.8.2.txt --target "$RELEASE_COMMIT" --title "CMail 0.8.2 — Inline email-header icons" --notes-file releases/v0.8.2.md --latest
